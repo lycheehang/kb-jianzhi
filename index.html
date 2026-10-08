@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#F2F2F7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="减脂">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>减脂计划</title>
+<style>
+/* ============================================================
+   设计基线：苹果 / iOS 口径（_设计基线\设计基线.md §1.5）
+   单一强调色 #007AFF；分组靠背景色不靠阴影；0.5px 内缩分隔线；
+   卡片圆角 12px；按钮胶囊；中文正文只用 400 / 600 两档字重。
+   ============================================================ */
+:root{
+  --accent:#007AFF;
+  --bg:#F2F2F7;
+  --cell:#FFFFFF;
+  --text:#000000;
+  --text2:rgba(60,60,67,.6);
+  --text3:rgba(60,60,67,.3);
+  --sep:rgba(60,60,67,.29);
+  --fill:rgba(120,120,128,.12);
+  --green:#34C759;
+  --red:#FF3B30;
+  --orange-text:#C77800;
+  --orange-bg:#FFF4E0;
+  --nav-h:44px;
+  --tab-h:50px;
+}
+html[data-theme="dark"]{
+  --accent:#0A84FF;
+  --bg:#000000;
+  --cell:#1C1C1E;
+  --text:#FFFFFF;
+  --text2:rgba(235,235,245,.6);
+  --text3:rgba(235,235,245,.3);
+  --sep:rgba(84,84,88,.65);
+  --fill:rgba(120,120,128,.24);
+  --green:#30D158;
+  --red:#FF453A;
+  --orange-text:#FFB340;
+  --orange-bg:#3A2E17;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Helvetica Neue","Segoe UI","PingFang SC","Microsoft YaHei UI",sans-serif;
+  font-size:17px;line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+
+/* ---------------- 导航栏（毛玻璃） ---------------- */
+.nav{
+  position:sticky;top:0;z-index:20;
+  padding-top:env(safe-area-inset-top);
+  background:color-mix(in srgb,var(--bg) 72%,transparent);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  backdrop-filter:saturate(180%) blur(20px);
+  border-bottom:.5px solid transparent;
+  transition:border-color .3s cubic-bezier(.25,.1,.25,1);
+}
+.nav.scrolled{border-bottom-color:var(--sep)}
+.nav-inner{height:var(--nav-h);display:flex;align-items:center;justify-content:center}
+.nav h1{margin:0;font-size:17px;font-weight:600;letter-spacing:0;opacity:0;transition:opacity .25s}
+.nav.scrolled h1{opacity:1}
+
+/* ---------------- 主体 ---------------- */
+main{
+  padding:0 20px calc(var(--tab-h) + env(safe-area-inset-bottom) + 28px);
+  max-width:640px;margin:0 auto;
+}
+.view{display:none;animation:fade .28s cubic-bezier(.25,.1,.25,1)}
+.view.on{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+.large-title{font-size:34px;font-weight:600;line-height:1.21;margin:8px 0 0}
+.subtitle{font-size:15px;color:var(--text2);margin:2px 0 0}
+.section-title{font-size:13px;font-weight:600;color:var(--text2);letter-spacing:.02em;margin:28px 0 8px;padding-left:2px}
+.section-title:first-child{margin-top:12px}
+
+/* ---------------- 分组卡片 ---------------- */
+.group{
+  background:var(--cell);border-radius:12px;overflow:hidden;
+}
+.row{
+  display:flex;align-items:center;gap:12px;
+  min-height:44px;padding:11px 16px;position:relative;
+}
+.row + .row::before{
+  content:"";position:absolute;left:16px;right:0;top:0;
+  height:.5px;background:var(--sep);
+}
+.row.tap{transition:background-color .12s}
+.row.tap:active{background:var(--fill)}
+.row .grow{flex:1;min-width:0}
+.row .name{font-size:17px;font-weight:400}
+.row .meta{font-size:13px;color:var(--text2);margin-top:1px}
+.row .value{font-size:17px;color:var(--text2);font-variant-numeric:tabular-nums}
+.row.done .name,.row.done .meta{color:var(--text3)}
+.row.done .name{text-decoration:line-through}
+
+/* 勾选圆点：iOS 口径，不是涟漪、不是实心方块 */
+.check{
+  flex:none;width:24px;height:24px;border-radius:50%;
+  border:1.8px solid var(--text3);
+  display:flex;align-items:center;justify-content:center;
+  transition:background-color .2s,border-color .2s,transform .12s;
+}
+.check svg{width:14px;height:14px;opacity:0;transition:opacity .2s}
+.check.on{background:var(--accent);border-color:var(--accent)}
+.check.on svg{opacity:1}
+.row.tap:active .check{transform:scale(.9)}
+
+/* ---------------- 今日 hero ---------------- */
+.hero{padding:4px 2px 0}
+.hero .phase{
+  display:inline-block;margin-top:10px;font-size:13px;font-weight:600;
+  color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);
+  padding:4px 11px;border-radius:999px;
+}
+.hero .phase.warn{color:var(--orange-text);background:var(--orange-bg)}
+
+/* 宏量：一条堆叠条 —— 强调色只给蛋白，其余走灰阶（一屏一个强调色） */
+.macros{display:flex;gap:20px;padding:16px}
+.macros .m{flex:1}
+.macros .m .k{font-size:13px;color:var(--text2)}
+.macros .m .v{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.3}
+.macros .m .u{font-size:13px;font-weight:400;color:var(--text2);margin-left:2px}
+.bar{height:6px;border-radius:3px;background:var(--fill);overflow:hidden;display:flex;gap:2px;margin:0 16px 16px}
+.bar i{display:block;height:100%;border-radius:3px}
+.bar i.p{background:var(--accent)}
+.bar i.c{background:color-mix(in srgb,var(--text) 42%,transparent)}
+.bar i.f{background:color-mix(in srgb,var(--text) 20%,transparent)}
+
+.kcal-big{display:flex;align-items:baseline;gap:6px;padding:16px 16px 0}
+.kcal-big b{font-size:34px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.022em;line-height:1.1}
+.kcal-big span{font-size:15px;color:var(--text2)}
+.kcal-note{padding:2px 16px 0;font-size:13px;color:var(--text2)}
+.kcal-wrap{padding-bottom:4px}
+
+/* ---------------- 提示块 ---------------- */
+.tip{
+  background:var(--cell);border-radius:12px;padding:14px 16px;
+  font-size:15px;color:var(--text2);line-height:1.65;
+}
+.tip b{color:var(--text);font-weight:600}
+.tip.warn{background:var(--orange-bg);color:var(--orange-text)}
+.tip.warn b{color:var(--orange-text)}
+
+/* ---------------- 计划页：一周表 ---------------- */
+.row.today .name{font-weight:600}
+/* "今天"做成名字后的小胶囊：**绝不遮住当天热量数字**（2026-10-08 看渲染图改） */
+.pill-today{
+  display:inline-block;margin-left:6px;vertical-align:1.5px;
+  font-size:11px;font-weight:600;letter-spacing:.01em;
+  color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,transparent);
+  padding:1px 7px;border-radius:999px;
+}
+
+/* ---------------- 分段控件 ---------------- */
+.seg{
+  display:flex;gap:2px;background:var(--fill);border-radius:9px;padding:2px;margin:12px 0 0;
+}
+.seg button{
+  flex:1;height:32px;border-radius:7px;font-size:15px;font-weight:600;color:var(--text);
+  transition:background-color .2s,box-shadow .2s;
+}
+.seg button.on{background:var(--cell);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+
+/* ---------------- 记录页 ---------------- */
+.field{display:flex;align-items:center;justify-content:space-between;min-height:44px;padding:8px 16px;position:relative}
+.field + .field::before{content:"";position:absolute;left:16px;right:0;top:0;height:.5px;background:var(--sep)}
+.field label{font-size:17px}
+.field input{
+  width:110px;text-align:right;font-size:17px;font-variant-numeric:tabular-nums;
+  border:0;background:none;color:var(--text);font-family:inherit;
+}
+.field input:focus{outline:none}
+.field .unit{font-size:17px;color:var(--text2);margin-left:4px}
+
+.btn{
+  display:block;width:100%;height:48px;border-radius:999px;
+  background:var(--accent);color:#fff;font-size:17px;font-weight:600;
+  margin-top:16px;transition:transform .12s,opacity .12s;
+}
+.btn:active{transform:scale(.97);opacity:.7}
+.btn.ghost{background:color-mix(in srgb,var(--accent) 12%,transparent);color:var(--accent)}
+
+.stat{padding:16px}
+.stat .k{font-size:13px;color:var(--text2)}
+.stat .v{font-size:34px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.022em;line-height:1.2}
+/* 空状态：不要用 34px 的破折号（会渲染成一根粗黑杠，像出错） */
+.stat .v.empty{font-size:17px;font-weight:400;color:var(--text2);letter-spacing:0;line-height:1.6;padding:4px 0 8px}
+.stat .v small{font-size:15px;font-weight:400;color:var(--text2);margin-left:4px;letter-spacing:0}
+.delta{font-size:15px;font-weight:600}
+.delta.down{color:var(--green)}
+.delta.up{color:var(--text2)}
+.spark{padding:0 16px 12px}
+
+/* ---------------- 底部标签栏 ---------------- */
+.tabbar{
+  position:fixed;left:0;right:0;bottom:0;z-index:30;
+  height:calc(var(--tab-h) + env(safe-area-inset-bottom));
+  padding-bottom:env(safe-area-inset-bottom);
+  display:flex;
+  background:color-mix(in srgb,var(--bg) 72%,transparent);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  backdrop-filter:saturate(180%) blur(20px);
+  border-top:.5px solid var(--sep);
+}
+.tabbar button{
+  flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  color:var(--text2);transition:color .2s,transform .12s;
+}
+.tabbar button.on{color:var(--accent)}
+.tabbar button:active{transform:scale(.94)}
+.tabbar svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tabbar span{font-size:10px;font-weight:600;letter-spacing:.01em}
+
+.footnote{font-size:13px;color:var(--text2);margin:10px 2px 0;line-height:1.6}
+</style>
+</head>
+<body>
+
+<header class="nav" id="nav">
+  <div class="nav-inner"><h1 id="navTitle">今日</h1></div>
+</header>
+
+<main>
+  <!-- ==================== 今日 ==================== -->
+  <section class="view on" id="v-today">
+    <div class="hero">
+      <p class="subtitle" id="t-date"></p>
+      <h2 class="large-title" id="t-title">—</h2>
+      <span class="phase" id="t-phase"></span>
+    </div>
+
+    <p class="section-title">今天吃多少</p>
+    <div class="group">
+      <div class="kcal-wrap">
+        <div class="kcal-big"><b id="t-kcal">—</b><span>kcal / 天</span></div>
+        <div class="kcal-note" id="t-kcalnote"></div>
+      </div>
+      <div class="macros">
+        <div class="m"><div class="k">蛋白</div><div class="v"><span id="t-p"></span><span class="u">g</span></div></div>
+        <div class="m"><div class="k">碳水</div><div class="v"><span id="t-c"></span><span class="u">g</span></div></div>
+        <div class="m"><div class="k">脂肪</div><div class="v"><span id="t-f"></span><span class="u">g</span></div></div>
+      </div>
+      <div class="bar" id="t-bar"><i class="p"></i><i class="c"></i><i class="f"></i></div>
+    </div>
+
+    <p class="section-title" id="t-wk-title">今天练什么</p>
+    <div class="group" id="t-workout"></div>
+
+    <p class="section-title">有氧</p>
+    <div class="group" id="t-cardio"></div>
+
+    <p class="section-title">今日要点</p>
+    <div class="tip" id="t-tip"></div>
+  </section>
+
+  <!-- ==================== 计划 ==================== -->
+  <section class="view" id="v-plan">
+    <h2 class="large-title">计划</h2>
+    <p class="subtitle">一周三练 · 推 / 拉 / 腿</p>
+
+    <p class="section-title">一周总表</p>
+    <div class="group" id="p-week"></div>
+
+    <p class="section-title">阶段</p>
+    <div class="group" id="p-phase"></div>
+
+    <div id="p-works"></div>
+
+    <p class="section-title">执行铁律</p>
+    <div class="group" id="p-rules"></div>
+  </section>
+
+  <!-- ==================== 吃 ==================== -->
+  <section class="view" id="v-eat">
+    <h2 class="large-title">吃</h2>
+    <p class="subtitle">食堂为主的可执行打法</p>
+
+    <div class="seg" id="e-seg">
+      <button class="on" data-m="train">训练日</button>
+      <button data-m="rest">休息日</button>
+    </div>
+
+    <p class="section-title">餐次模板</p>
+    <div class="group" id="e-meals"></div>
+
+    <p class="section-title">食堂挑菜</p>
+    <div class="group">
+      <div class="row"><div class="grow"><div class="name">拿</div><div class="meta">清蒸 · 白灼 · 卤 · 烤 · 炖（少油做法）；瘦肉 · 鱼虾 · 鸡蛋 · 豆腐</div></div></div>
+      <div class="row"><div class="grow"><div class="name">跳过</div><div class="meta">红烧 · 糖醋 · 干锅 · 油炸 · 油焖 · 麻辣香锅 · 勾芡</div></div></div>
+      <div class="row"><div class="grow"><div class="name">过水</div><div class="meta">食堂菜油大，用免费清汤或开水涮一遍，一餐省 50–100 kcal</div></div></div>
+      <div class="row"><div class="grow"><div class="name">不泡饭</div><div class="meta">肉汤泡饭、盖浇饭的汁 —— 食堂最大的隐形热量</div></div></div>
+    </div>
+
+    <p class="section-title">主食换算</p>
+    <div class="group">
+      <div class="row"><div class="grow"><div class="name">一碗米饭</div><div class="meta">约 200g 熟 ≈ 260 kcal · 碳水 58g</div></div></div>
+      <div class="row"><div class="grow"><div class="name">训练日</div><div class="meta">早 1 份 + 午 1 碗 + 晚 1 碗 + 练前 1 根香蕉</div></div></div>
+      <div class="row"><div class="grow"><div class="name">休息日</div><div class="meta">早减半 + 午 2/3 碗 + 晚 2/3 碗</div></div></div>
+      <div class="row"><div class="grow"><div class="name">算主食不算菜</div><div class="meta">土豆 · 藕 · 山药 · 粉条 · 南瓜 · 玉米 · 红薯（吃了就减饭）</div></div></div>
+    </div>
+
+    <p class="section-title">减脂期禁区</p>
+    <div class="tip warn"><b>不碰：</b>含糖饮料 / 奶茶 / 果汁 · 油炸 · 炒饭炒面拌面 · 甜点饼干薯片 · 酒精。<br>一杯全糖奶茶 ≈ 400 kcal ≈ 跑步机上 40 分钟 —— 这就是"吃得不多却不掉秤"的主因。</div>
+
+    <p class="section-title">蛋白补充（必买）</p>
+    <div class="group">
+      <div class="row"><div class="grow"><div class="name">乳清蛋白粉</div><div class="meta">练后 1 勺（24g）；睡前没吃够再补 1 勺</div></div></div>
+      <div class="row"><div class="grow"><div class="name">即食鸡胸 / 水煮蛋</div><div class="meta">下午加餐，100g 鸡胸 ≈ 22g 蛋白</div></div></div>
+      <div class="row"><div class="grow"><div class="name">无糖希腊酸奶</div><div class="meta">上午加餐，1 盒 ≈ 10g 蛋白</div></div></div>
+    </div>
+    <div class="tip" style="margin-top:10px">食堂正常吃一天只有约 <b>110g 蛋白</b>，离 170g 还差 <b>60g</b> —— 不补这三样，热量对了肌肉也保不住。</div>
+
+    <p class="section-title">聚餐 / 外食</p>
+    <div class="group">
+      <div class="row"><div class="grow"><div class="name">当天另外两餐去掉主食</div><div class="meta">只吃蛋白 + 蔬菜</div></div></div>
+      <div class="row"><div class="grow"><div class="name">力量训练排在聚餐前</div><div class="meta">练完再吃，糖原先给肌肉</div></div></div>
+      <div class="row"><div class="grow"><div class="name">绝不"第二天绝食"补偿</div><div class="meta">会变成暴食循环</div></div></div>
+    </div>
+  </section>
+
+  <!-- ==================== 记录 ==================== -->
+  <section class="view" id="v-log">
+    <h2 class="large-title">记录</h2>
+    <p class="subtitle">每周一晨起 · 空腹 · 排便后</p>
+
+    <p class="section-title">今天的数据</p>
+    <div class="group">
+      <div class="field"><label for="in-w">体重</label><span><input id="in-w" type="number" inputmode="decimal" step="0.1" placeholder="—"><span class="unit">kg</span></span></div>
+      <div class="field"><label for="in-waist">腰围</label><span><input id="in-waist" type="number" inputmode="decimal" step="0.1" placeholder="—"><span class="unit">cm</span></span></div>
+    </div>
+    <button class="btn" id="btn-save">保存今天</button>
+    <p class="footnote" id="log-msg">数据只存在这台手机里，不会上传到任何服务器。</p>
+
+    <p class="section-title">7 天平均</p>
+    <div class="group">
+      <div class="stat">
+        <div class="k">体重</div>
+        <div class="v"><span id="avg-w">—</span><small id="avg-w-unit">kg</small></div>
+        <div id="avg-w-delta"></div>
+      </div>
+      <div class="row"><div class="grow"><div class="name">腰围（最近一次）</div></div><div class="value" id="last-waist">—</div></div>
+    </div>
+
+    <p class="section-title">趋势（最近 14 次）</p>
+    <div class="group">
+      <div class="spark" id="spark"></div>
+    </div>
+
+    <p class="section-title">怎么调</p>
+    <div class="group">
+      <div class="row"><div class="grow"><div class="name">周均降幅 &lt; 0.3kg</div><div class="meta">先加 2000 步/天或加 10 分钟有氧；仍不动再减 150 kcal</div></div></div>
+      <div class="row"><div class="grow"><div class="name">周均降幅 &gt; 0.9kg</div><div class="meta">加回 150–200 kcal 碳水，保护肌肉</div></div></div>
+      <div class="row"><div class="grow"><div class="name">腰围不动但体重掉</div><div class="meta">在掉肌肉 → 加蛋白、减有氧</div></div></div>
+      <div class="row"><div class="grow"><div class="name">怕冷 / 掉头发 / 睡不好 / 重量暴跌</div><div class="meta">缺口过大，立刻进 diet break</div></div></div>
+    </div>
+
+    <p class="section-title">历史</p>
+    <div class="group" id="log-list"></div>
+    <button class="btn ghost" id="btn-clear">清空全部记录</button>
+  </section>
+</main>
+
+<nav class="tabbar" id="tabbar">
+  <button class="on" data-v="today">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M8.2 12.3l2.7 2.7 5-5.6"/></svg>
+    <span>今日</span>
+  </button>
+  <button data-v="plan">
+    <svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>
+    <span>计划</span>
+  </button>
+  <button data-v="eat">
+    <svg viewBox="0 0 24 24"><path d="M3.5 11.5h17a8.5 8.5 0 0 1-17 0z"/><path d="M9 7.5c0-1.5 1.3-2.5 3-2.5s3 1 3 2.5"/></svg>
+    <span>吃</span>
+  </button>
+  <button data-v="log">
+    <svg viewBox="0 0 24 24"><path d="M4.5 19V11M10 19V5.5M15.5 19v-5.5M21 19V8.5"/></svg>
+    <span>记录</span>
+  </button>
+</nav>
+
+<script>
+/* ============================================================
+   计划数据（唯一来源；要改数字改这一段即可）
+   ============================================================ */
+const PLAN_START = '2026-10-12';   // 第 1 周周一
+const DIET_BREAK_WEEK = 8;         // 第 8 周 = 生日周（12/01）放开吃
+const TOTAL_WEEKS = 18;
+
+// getDay(): 0=周日 … 6=周六
+const DAYS = {
+  0:{name:'周日',type:'rest',title:'完全休息',kcal:2050,p:170,c:185,f:70,cardio:'走够 6000–8000 步',note:'今天只做一件事：把步数走够，别补练。'},
+  1:{name:'周一',type:'push',title:'推日',kcal:2300,p:170,c:260,f:65,cardio:'练后坡度走 15–20 分钟',note:'复合动作休息 <b>90–120s</b>，别为了赶时间缩到 60s —— 减脂期掉重量就是在掉肌肉。'},
+  2:{name:'周二',type:'rest',title:'休息日',kcal:2050,p:170,c:185,f:70,cardio:'椭圆 / 单车 30–40 分钟',note:'有氧放今天，心率 <b>120–140</b> 就够，不用拼。'},
+  3:{name:'周三',type:'pull',title:'拉日',kcal:2300,p:170,c:260,f:65,cardio:'练后坡度走 15–20 分钟',note:'面拉今天做满 —— 减脂期肩是最容易伤的地方。'},
+  4:{name:'周四',type:'rest',title:'主动恢复',kcal:2050,p:170,c:185,f:70,cardio:'快走 20–30 分钟 + 拉伸',note:'明天是腿日，今天别练腿，把睡眠补够。'},
+  5:{name:'周五',type:'legs',title:'腿日',kcal:2300,p:170,c:260,f:65,cardio:'无（练完直接走）',note:'深蹲重量<b>绝不降</b>；练完不加有氧。'},
+  6:{name:'周六',type:'rest',title:'休息日',kcal:2050,p:170,c:185,f:70,cardio:'长有氧 45–60 分钟',note:'长有氧放今天，明天完全休息。'}
+};
+
+const WORKOUTS = {
+  push:{
+    label:'推日 · 胸 + 肩 + 三头',
+    sub:'原 20 组 → 现 18 组（减脂期不加量）',
+    items:[
+      {n:'杠铃 / 哑铃卧推', s:'4 × 8–12', t:'核心动作，能做满就加 2.5kg'},
+      {n:'上斜哑铃卧推', s:'3 × 10–12', t:'填充上胸'},
+      {n:'坐姿哑铃推举', s:'3 × 8–12', t:'原 4 组 → 3 组'},
+      {n:'站姿侧平举', s:'3 × 12–15', t:'最后一组做递减'},
+      {n:'绳索下压 + 颈后臂屈伸', s:'3 + 2 组', t:'超级组，省 8 分钟'}
+    ]
+  },
+  pull:{
+    label:'拉日 · 背 + 二头 + 后肩',
+    sub:'20 组，结构保留，改用超级组省时间',
+    items:[
+      {n:'高位下拉 / 引体向上', s:'4 × 8–12', t:'打造背阔肌宽度'},
+      {n:'杠铃俯身划船 / 单臂哑铃划船', s:'4 × 8–12', t:'增厚中背'},
+      {n:'绳索直臂下压', s:'3 × 12–15', t:'收紧背外侧'},
+      {n:'绳索面拉', s:'3 × 15–20', t:'次数拉高，护肩'},
+      {n:'杠铃弯举 + 锤式弯举', s:'3 + 3 组', t:'超级组'}
+    ]
+  },
+  legs:{
+    label:'腿日 · 下肢全能',
+    sub:'原 21 组 → 现 20 组；复合动作休息 90–120s',
+    items:[
+      {n:'杠铃 / 哑铃深蹲', s:'4 × 8–12', t:'重量绝不降'},
+      {n:'罗马尼亚硬拉', s:'3 × 10–12', t:'原 4 组 → 3 组'},
+      {n:'坐姿腿屈伸 + 俯卧腿弯举', s:'3 + 3 组', t:'超级组'},
+      {n:'臀桥 / 杠铃臀推', s:'3 × 12–15', t:'收紧下臀线'},
+      {n:'站姿提踵', s:'4 × 15–20', t:'小腿线条'}
+    ]
+  }
+};
+
+const WEEK_TABLE = [
+  {i:1,day:'周一',w:'推日',           c:'练后坡度走 15–20 min',     k:2300},
+  {i:2,day:'周二',w:'休息',           c:'椭圆 / 单车 30–40 min',    k:2050},
+  {i:3,day:'周三',w:'拉日',           c:'练后坡度走 15–20 min',     k:2300},
+  {i:4,day:'周四',w:'主动恢复',        c:'快走 20–30 min + 拉伸',    k:2050},
+  {i:5,day:'周五',w:'腿日',           c:'无',                      k:2300},
+  {i:6,day:'周六',w:'休息',           c:'长有氧 45–60 min',         k:2050},
+  {i:0,day:'周日',w:'完全休息',        c:'走够 6000–8000 步',        k:2050}
+];
+
+const MEALS = {
+  train:[
+    ['07:30 早餐','2 蛋 + 300ml 牛奶 / 无糖豆浆 + 1 份主食'],
+    ['10:30 加餐','无糖希腊酸奶 1 盒'],
+    ['12:00 午餐','半盘蔬菜 + 150–200g 瘦肉 + 1 碗饭（菜过水）'],
+    ['16:30 练前','1 根香蕉 或 1 片面包 —— 别空腹练'],
+    ['练后 30 分钟','乳清蛋白 1 勺'],
+    ['19:30 晚餐','半盘蔬菜 + 150–200g 瘦肉 + 1 碗饭'],
+    ['22:00 可选','1 杯牛奶 或 1 勺乳清']
+  ],
+  rest:[
+    ['07:30 早餐','2 蛋 + 300ml 牛奶 / 无糖豆浆 + 半份主食'],
+    ['10:30 加餐','无糖希腊酸奶 1 盒'],
+    ['12:00 午餐','半盘蔬菜 + 150–200g 瘦肉 + 2/3 碗饭'],
+    ['16:30 加餐','即食鸡胸 100g 或 2 个水煮蛋'],
+    ['19:30 晚餐','半盘蔬菜 + 150–200g 瘦肉 + 2/3 碗饭']
+  ]
+};
+
+const PHASES = [
+  ['第 1–7 周','主减脂期','81 → 77.5kg，约 0.5–0.6kg/周'],
+  ['第 8 周','Diet break · 生日周','吃回 2700 kcal，蛋白不变，训练照常'],
+  ['第 9–18 周','主减脂期（后半）','77.5 → 73kg，蛋白提到 175g'],
+  ['第 19 周起','维持期','吃回 2600–2800 kcal，观察 2–3 周']
+];
+
+const RULES = [
+  ['复合动作休息 90–120s','孤立动作 60s 内。原文 60–90s 用在深蹲上偏短，会直接掉重量'],
+  ['双进阶加重量','某重量能做满次数上限 → 下次 +2.5kg'],
+  ['力量掉 ≤5% 正常','掉超 10% = 缺口太大 / 睡不够 / 蛋白不够，先查这三项'],
+  ['每天 9000–10000 步','NEAT 是最强也最不伤恢复的杠杆'],
+  ['睡够 7.5 小时','同样赤字下，睡不够掉的肌肉比例明显更高']
+];
+
+/* ============================================================
+   工具
+   ============================================================ */
+const LS_CHECK = 'jz.checkins.v1';
+const LS_REC   = 'jz.records.v1';
+const $  = s => document.querySelector(s);
+
+function load(k, d){ try{ const v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; }catch(e){ return d; } }
+function save(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+function ymd(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function midnight(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+function todayKey(){ return ymd(new Date()); }
+function weekNo(){
+  const diff = Math.round((midnight(new Date()) - midnight(new Date(PLAN_START+'T00:00:00'))) / 86400000);
+  return Math.floor(diff / 7) + 1;
+}
+function mondayOf(d){
+  const x = midnight(d); const k = (x.getDay() + 6) % 7;
+  x.setDate(x.getDate() - k); return x;
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* 预览参数（渲染验证与你临时查看用，不影响正常打开）：
+     ?tab=today|plan|eat|log   直接打开某一页
+     ?day=0..6                 把"今天"当成星期几（0=周日）预览
+     ?theme=dark|light         强制主题（不传时跟随系统） */
+const QP = new URLSearchParams(location.search);
+const PREVIEW_DAY = QP.has('day') ? (parseInt(QP.get('day'), 10) || 0) : null;
+(function(){
+  const q = QP.get('theme');
+  const dark = q ? q === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+})();
+
+/* ============================================================
+   今日
+   ============================================================ */
+let checkins = load(LS_CHECK, {});
+
+function todayDone(){ const k = todayKey(); if(!checkins[k]) checkins[k] = []; return checkins[k]; }
+
+function toggle(id){
+  const arr = todayDone();
+  const i = arr.indexOf(id);
+  if(i >= 0) arr.splice(i,1); else arr.push(id);
+  save(LS_CHECK, checkins);
+  paintToday();
+}
+
+function paintToday(){
+  const now = new Date(), w = weekNo();
+  const di = (PREVIEW_DAY == null ? now.getDay() : PREVIEW_DAY);
+  const day = DAYS[di];
+  const isBreak = (w === DIET_BREAK_WEEK);
+  const done = todayDone();
+
+  $('#t-date').textContent = (now.getMonth()+1)+' 月 '+now.getDate()+' 日 · '+day.name
+    + (PREVIEW_DAY == null ? '' : '（预览）');
+  $('#t-title').textContent = day.title;
+
+  const ph = $('#t-phase');
+  if(w < 1)              { ph.textContent = '计划未开始 · '+PLAN_START+'（周一）起'; ph.className = 'phase'; }
+  else if(isBreak)       { ph.textContent = '第 '+w+' 周 · Diet break（生日周，放开吃）'; ph.className = 'phase warn'; }
+  else if(w <= TOTAL_WEEKS){ ph.textContent = '第 '+w+' 周 · 主减脂期'; ph.className = 'phase'; }
+  else                   { ph.textContent = '第 '+w+' 周 · 维持期'; ph.className = 'phase'; }
+
+  const kcal = isBreak ? 2700 : day.kcal;
+  const p    = isBreak ? 170  : day.p;
+  const c    = isBreak ? 335  : day.c;
+  const f    = isBreak ? 75   : day.f;
+
+  $('#t-kcal').textContent = kcal;
+  $('#t-kcalnote').textContent = isBreak
+    ? 'Diet break：吃回维持热量，蛋白不变，训练照常'
+    : (day.type === 'rest' ? '休息日 · 赤字日' : '训练日 · 吃够蛋白再谈缺口');
+  $('#t-p').textContent = p; $('#t-c').textContent = c; $('#t-f').textContent = f;
+
+  const kc = [p*4, c*4, f*9], tot = kc[0]+kc[1]+kc[2];
+  const bar = $('#t-bar').children;
+  bar[0].style.width = (kc[0]/tot*100)+'%';
+  bar[1].style.width = (kc[1]/tot*100)+'%';
+  bar[2].style.width = (kc[2]/tot*100)+'%';
+
+  // 训练清单
+  const wo = WORKOUTS[day.type];
+  $('#t-wk-title').textContent = wo ? '今天练什么 · ' + wo.label : '今天练什么';
+  const box = $('#t-workout');
+  if(wo){
+    let h = '';
+    wo.items.forEach((it,i) => {
+      const id = 'w'+i, on = done.includes(id);
+      h += '<div class="row tap'+(on?' done':'')+'" data-id="'+id+'">'
+         +   '<div class="check'+(on?' on':'')+'">'+CHECK_SVG+'</div>'
+         +   '<div class="grow"><div class="name">'+esc(it.n)+'</div>'
+         +     '<div class="meta">'+esc(it.s)+' · '+esc(it.t)+'</div></div>'
+         + '</div>';
+    });
+    const n = wo.items.filter((_,i) => done.includes('w'+i)).length;
+    h += '<div class="row"><div class="grow"><div class="name">进度</div></div><div class="value">'+n+' / '+wo.items.length+'</div></div>';
+    box.innerHTML = h;
+    box.className = 'group';
+  } else {
+    box.innerHTML = '<div class="row"><div class="grow"><div class="name">今天不练力量</div>'
+                  + '<div class="meta">恢复也是计划的一部分 —— 肌肉是在休息日长出来的</div></div></div>';
+    box.className = 'group';
+  }
+
+  // 有氧
+  const onC = done.includes('cardio');
+  $('#t-cardio').innerHTML =
+      '<div class="row tap'+(onC?' done':'')+'" data-id="cardio">'
+    +   '<div class="check'+(onC?' on':'')+'">'+CHECK_SVG+'</div>'
+    +   '<div class="grow"><div class="name">'+esc(day.cardio)+'</div>'
+    +     '<div class="meta">'+(day.type==='rest'?'今天的主动作就是它':'练完再做，不占训练精力')+'</div></div>'
+    + '</div>';
+
+  // 今日要点：明日提示 + 每日要点
+  const tm = DAYS[(di+1) % 7];
+  $('#t-tip').innerHTML = '今天：'+day.note
+    + '<br>明天是 <b>'+tm.title+'</b>' + (tm.type === 'rest' ? '，不用练力量。' : '，今晚早点睡。')
+    + (isBreak ? '<br><b>Diet break 这周不称重、不记录、不焦虑。</b>' : '');
+
+  // 本周训练打卡进度
+  const mon = mondayOf(now);
+  let hit = 0;
+  for(let i=0;i<7;i++){
+    const d = new Date(mon); d.setDate(d.getDate()+i);
+    const arr = checkins[ymd(d)] || [];
+    if(arr.some(x => x.startsWith('w'))) hit++;
+  }
+  $('#navTitle').textContent = '今日 · 本周训练 '+hit+'/3';
+}
+const CHECK_SVG = '<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+/* ============================================================
+   计划
+   ============================================================ */
+function paintPlan(){
+  const di = (PREVIEW_DAY == null ? new Date().getDay() : PREVIEW_DAY);
+  $('#p-week').innerHTML = WEEK_TABLE.map(r =>
+      '<div class="row'+(r.i === di ? ' today' : '')+'">'
+    +   '<div class="grow"><div class="name">'+r.day+' · '+r.w
+    +     (r.i === di ? '<span class="pill-today">今天</span>' : '')+'</div>'
+    +     '<div class="meta">'+r.c+'</div></div>'
+    +   '<div class="value">'+r.k+'</div>'
+    + '</div>').join('');
+
+  $('#p-phase').innerHTML = PHASES.map(x =>
+      '<div class="row"><div class="grow"><div class="name">'+x[1]+'</div><div class="meta">'+x[0]+' · '+x[2]+'</div></div></div>').join('');
+
+  $('#p-works').innerHTML = ['push','pull','legs'].map(k => {
+    const wo = WORKOUTS[k];
+    return '<p class="section-title">'+wo.label+'</p>'
+      + '<div class="group">'
+      + wo.items.map(it =>
+          '<div class="row"><div class="grow"><div class="name">'+esc(it.n)+'</div>'
+        + '<div class="meta">'+esc(it.t)+'</div></div><div class="value">'+esc(it.s)+'</div></div>').join('')
+      + '</div>'
+      + '<p class="footnote">'+esc(wo.sub)+'</p>';
+  }).join('');
+
+  $('#p-rules').innerHTML = RULES.map(r =>
+      '<div class="row"><div class="grow"><div class="name">'+r[0]+'</div><div class="meta">'+r[1]+'</div></div></div>').join('');
+}
+
+/* ============================================================
+   吃
+   ============================================================ */
+function paintEat(mode){
+  $('#e-meals').innerHTML = MEALS[mode].map(m =>
+      '<div class="row"><div class="grow"><div class="name">'+m[0]+'</div><div class="meta">'+esc(m[1])+'</div></div></div>').join('');
+}
+
+/* ============================================================
+   记录
+   ============================================================ */
+let records = load(LS_REC, []);
+
+function recordsSorted(){ return records.slice().sort((a,b) => a.d < b.d ? -1 : 1); }
+
+function paintLog(){
+  const rs = recordsSorted();
+  const last7 = rs.slice(-7);
+
+  if(last7.length){
+    const avg = last7.reduce((s,r) => s + r.w, 0) / last7.length;
+    $('#avg-w').textContent = avg.toFixed(1);
+    $('#avg-w').parentNode.classList.remove('empty');
+    $('#avg-w-unit').style.display = '';
+    const prev = rs.slice(-14,-7);
+    const d = $('#avg-w-delta');
+    if(prev.length){
+      const pa = prev.reduce((s,r) => s + r.w, 0) / prev.length;
+      const diff = avg - pa;
+      d.innerHTML = '<span class="delta '+(diff <= 0 ? 'down' : 'up')+'">'
+        + (diff <= 0 ? '▼ ' : '▲ ') + Math.abs(diff).toFixed(1) + ' kg（对比上一个 7 天）</span>';
+    } else { d.innerHTML = ''; }
+  } else {
+    $('#avg-w').textContent = '还没有数据';
+    $('#avg-w').parentNode.classList.add('empty');
+    $('#avg-w-unit').style.display = 'none';
+    $('#avg-w-delta').innerHTML = '';
+  }
+
+  const lastW = rs.filter(r => r.waist != null).slice(-1)[0];
+  $('#last-waist').textContent = lastW ? lastW.waist.toFixed(1) + ' cm' : '—';
+
+  // 迷你折线
+  const pts = rs.slice(-14).filter(r => r.w != null);
+  if(pts.length >= 2){
+    const W = 260, H = 64, P = 6;
+    const vs = pts.map(p => p.w), mn = Math.min(...vs), mx = Math.max(...vs), sp = (mx - mn) || 1;
+    const xy = pts.map((p,i) => [
+      P + i * (W - 2*P) / (pts.length - 1),
+      H - P - (p.w - mn) / sp * (H - 2*P)
+    ]);
+    const line = xy.map(p => p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+    const dots = xy.map(p => '<circle cx="'+p[0].toFixed(1)+'" cy="'+p[1].toFixed(1)+'" r="2.6" fill="var(--accent)"/>').join('');
+    $('#spark').innerHTML = '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:64px;display:block">'
+      + '<polyline points="'+line+'" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
+      + dots + '</svg>'
+      + '<div style="display:flex;justify-content:space-between;font-size:13px;color:var(--text2);padding:2px 0 4px">'
+      + '<span>'+esc(pts[0].d.slice(5))+' · '+vs[0].toFixed(1)+'kg</span>'
+      + '<span>'+esc(pts[pts.length-1].d.slice(5))+' · '+vs[vs.length-1].toFixed(1)+'kg</span></div>';
+  } else {
+    $('#spark').innerHTML = '<div class="footnote" style="padding:0 0 4px">记满 2 次就会出趋势线。</div>';
+  }
+
+  $('#log-list').innerHTML = rs.slice(-12).reverse().map(r =>
+      '<div class="row"><div class="grow"><div class="name">'+esc(r.d)+'</div></div>'
+    + '<div class="value">'+(r.w != null ? r.w.toFixed(1)+' kg' : '')
+    + (r.waist != null ? ' · '+r.waist.toFixed(1)+' cm' : '')+'</div></div>').join('')
+    || '<div class="row"><div class="grow"><div class="name">还没有记录</div><div class="meta">每周一早上填一次就够</div></div></div>';
+
+  // 没有记录时不给"清空"按钮（点了也没反应的按钮＝假控件）
+  $('#btn-clear').style.display = records.length ? 'block' : 'none';
+
+  // 回填今天的输入
+  const t = rs.filter(r => r.d === todayKey())[0];
+  if(t){
+    if(t.w != null && !$('#in-w').value) $('#in-w').value = t.w;
+    if(t.waist != null && !$('#in-waist').value) $('#in-waist').value = t.waist;
+  }
+}
+
+$('#btn-save').addEventListener('click', () => {
+  const w = parseFloat($('#in-w').value), wa = parseFloat($('#in-waist').value);
+  if(isNaN(w) && isNaN(wa)){ $('#log-msg').textContent = '先填体重或腰围再保存。'; return; }
+  const d = todayKey();
+  const i = records.findIndex(r => r.d === d);
+  const rec = { d: d, w: isNaN(w) ? null : w, waist: isNaN(wa) ? null : wa };
+  if(i >= 0) records[i] = rec; else records.push(rec);
+  save(LS_REC, records); paintLog();
+  $('#log-msg').textContent = '已保存 · ' + d + '　（只在这台手机上）';
+});
+
+$('#btn-clear').addEventListener('click', () => {
+  if(!records.length) return;
+  if(confirm('清空全部 ' + records.length + ' 条记录？此操作不可恢复。')){
+    records = []; save(LS_REC, records);
+    $('#in-w').value = ''; $('#in-waist').value = '';
+    paintLog(); $('#log-msg').textContent = '已清空。';
+  }
+});
+
+/* ============================================================
+   切页 / 事件
+   ============================================================ */
+function show(v){
+  document.querySelectorAll('.view').forEach(el => el.classList.toggle('on', el.id === 'v-' + v));
+  document.querySelectorAll('.tabbar button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  $('#navTitle').textContent = ({today:'今日',plan:'计划',eat:'吃',log:'记录'})[v];
+  if(v === 'today') paintToday();
+  window.scrollTo(0,0);
+}
+
+$('#tabbar').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(b) show(b.dataset.v);
+});
+
+// 训练/有氧打勾（事件委托）
+document.addEventListener('click', e => {
+  const row = e.target.closest('.row.tap'); if(row && row.dataset.id) toggle(row.dataset.id);
+});
+
+$('#e-seg').addEventListener('click', e => {
+  const b = e.target.closest('button'); if(!b) return;
+  $('#e-seg').querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b));
+  paintEat(b.dataset.m);
+});
+
+addEventListener('scroll', () => $('#nav').classList.toggle('scrolled', scrollY > 8), { passive:true });
+
+paintToday(); paintPlan(); paintEat('train'); paintLog();
+show(QP.get('tab') || 'today');
+</script>
+</body>
+</html>
